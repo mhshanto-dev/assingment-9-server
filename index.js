@@ -50,6 +50,18 @@ async function server() {
         const result = await addRoomCollection.insertOne(addRoom);
         res.send(result);
     })
+
+
+
+    app.get("/rooms/:id", async (req, res) => {
+  const id = req.params.id;
+
+  const room = await roomsCollection.findOne({
+    _id: new ObjectId(id),
+  });
+
+  res.send(room);
+});
     
 
 
