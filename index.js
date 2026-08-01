@@ -56,12 +56,28 @@ async function server() {
     app.get("/rooms/:id", async (req, res) => {
   const id = req.params.id;
 
-  const room = await roomsCollection.findOne({
+  const room = await addRoomCollection.findOne({
     _id: new ObjectId(id),
   });
 
   res.send(room);
 });
+
+
+    app.patch("/rooms/:id", async (req, res) => {
+        const id = req.params.id;
+        const updateRoom = req.body;
+        console.log(updateRoom);
+        const result = await addRoomCollection.updateOne(
+          {
+            _id: new ObjectId(id),
+          },
+          {
+            $set: updateRoom,
+          }
+        );
+        res.json(result);
+    })
     
 
 
