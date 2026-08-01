@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const dotenv = require("dotenv").config();
-const port = process.env.PORT;
+const port = process.env.PORT || 5000;
 const cors = require("cors");
 
 app.use(express.json());
@@ -39,8 +39,49 @@ async function server() {
     const db = client.db("studynook");
     const addRoomCollection = db.collection("addroom");
 
+    // app.get("/rooms", async (req, res) => {
+    //     const result = await addRoomCollection.find().toArray();
+    //     res.json(result);
+    // })
+
     app.get("/rooms", async (req, res) => {
-        const result = await addRoomCollection.find().toArray();
+  try {
+    const search = req.query.search || "";
+    const amenities = req.query.amenities || "";
+
+    const query = {};
+
+    // Search by room name
+    if (search) {
+      query.name = {
+        $regex: search,
+        $options: "i",
+      };
+    }
+
+    // Amenities filter
+    if (amenities) {
+      query.amenities = {
+        $in: amenities.split(","),
+      };
+    }
+
+    const result = await addRoomCollection.find(query).toArray();
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+ //  single room show
+    app.get("/rooms/:id", async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await addRoomCollection.findOne(query);
         res.json(result);
     })
 
@@ -53,15 +94,15 @@ async function server() {
 
 
 
-    app.get("/rooms/:id", async (req, res) => {
-  const id = req.params.id;
+//     app.get("/rooms/:id", async (req, res) => {
+//   const id = req.params.id;
 
-  const room = await addRoomCollection.findOne({
-    _id: new ObjectId(id),
-  });
+//   const room = await addRoomCollection.findOne({
+//     _id: new ObjectId(id),
+//   });
 
-  res.send(room);
-});
+//   res.send(room);
+// });
 
 
     app.patch("/rooms/:id", async (req, res) => {
