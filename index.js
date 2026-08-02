@@ -142,6 +142,13 @@ async function server() {
         res.json(result);
     })
 
+    app.delete('/bookings/:bookingId', async (req, res) => {
+        const {bookingId} = req.params;
+        const query = { _id: new ObjectId(bookingId) };
+        const result = await bookingCollection.deleteOne(query);
+        res.json(result);
+    })
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
