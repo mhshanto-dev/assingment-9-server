@@ -77,16 +77,9 @@ async function server() {
  //  single room show
     app.get("/rooms/:id", (req, res, next)=>{
       const header = req.headers.authorization;
-      if(header === "logged in"){
+      console.log(header);
         next();
-      }
-    else{
-        res.status(401).json({
-            success: false,
-            message: "Unauthorized access",
-    });
-    }
-    }, async (req, res) => {
+     }, async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
         const result = await addRoomCollection.findOne(query);
@@ -97,7 +90,7 @@ async function server() {
 
         res.json(result);
     })
-    
+
     app.post("/add-room", async (req, res) => {
         const addRoom = req.body;
         console.log(addRoom);
