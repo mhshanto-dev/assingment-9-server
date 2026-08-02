@@ -18,6 +18,7 @@ app.get("/", (req, res) => {
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 const uri =process.env.MONGODB_URI;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -28,6 +29,41 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+const JWKS =createRemoteJWKSet(
+  new URL("http://localhost:3000/api/auth/jwks")
+)
+
+const verifyToken = async (req, res, next) => {
+  const authHeader = req?.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
+  }
+
+  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
+  }
+
+  try {
+    const { payload } = await jwtVerify(token, JWKS);
+    console.log(payload);
+    req.user = payload;
+    next();
+  } catch (error) {
+    console.error("Token verify error:", error.message);
+    return res.status(401).json({
+      success: false,
+      message: "Forbidden access",
+    });
+  }
+}
 
 async function server() {
   try {
@@ -75,11 +111,7 @@ async function server() {
 });
 
  //  single room show
-    app.get("/rooms/:id", (req, res, next)=>{
-      const header = req.headers.authorization;
-      console.log(header);
-        next();
-     }, async (req, res) => {
+    app.get("/rooms/:id", verifyToken, async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
         const result = await addRoomCollection.findOne(query);
@@ -162,3 +194,6 @@ server().catch(console.dir);
 app.listen(port, () => {
     console.log(`http://localhost:${port}`);
 });
+
+
+
