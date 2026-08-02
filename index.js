@@ -128,6 +128,12 @@ async function server() {
         const result = await addRoomCollection.deleteOne(query);
         res.json(result);
     })
+
+    app.get("/bookings/:userId", async (req, res) => {
+        const { userId } = req.params;
+        const result = await bookingCollection.find({ userId:userId }).toArray();
+        res.json(result);
+  })
     
     app.post("/bookings", async (req, res) => {
         const booking = req.body;
