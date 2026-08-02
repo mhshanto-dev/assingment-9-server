@@ -38,6 +38,7 @@ async function server() {
     // Work is start from hare 
     const db = client.db("studynook");
     const addRoomCollection = db.collection("addroom");
+    const bookingCollection = db.collection("bookings");
 
     // app.get("/rooms", async (req, res) => {
     //     const result = await addRoomCollection.find().toArray();
@@ -128,6 +129,12 @@ async function server() {
         res.json(result);
     })
     
+    app.post("/bookings", async (req, res) => {
+        const booking = req.body;
+        console.log(booking);
+        const result = await bookingCollection.insertOne(booking);
+        res.json(result);
+    })
 
 
     // Send a ping to confirm a successful connection
