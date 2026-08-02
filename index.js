@@ -40,10 +40,6 @@ async function server() {
     const addRoomCollection = db.collection("addroom");
     const bookingCollection = db.collection("bookings");
 
-    // app.get("/rooms", async (req, res) => {
-    //     const result = await addRoomCollection.find().toArray();
-    //     res.json(result);
-    // })
 
     app.get("/rooms", async (req, res) => {
   try {
@@ -79,13 +75,29 @@ async function server() {
 });
 
  //  single room show
-    app.get("/rooms/:id", async (req, res) => {
+    app.get("/rooms/:id", (req, res, next)=>{
+      const header = req.headers.authorization;
+      if(header === "logged in"){
+        next();
+      }
+    else{
+        res.status(401).json({
+            success: false,
+            message: "Unauthorized access",
+    });
+    }
+    }, async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
         const result = await addRoomCollection.findOne(query);
+
+        if (!result) {
+            return res.status(404).json({ success: false, message: "Room not found" });
+        }
+
         res.json(result);
     })
-
+    
     app.post("/add-room", async (req, res) => {
         const addRoom = req.body;
         console.log(addRoom);
@@ -94,16 +106,6 @@ async function server() {
     })
 
 
-
-//     app.get("/rooms/:id", async (req, res) => {
-//   const id = req.params.id;
-
-//   const room = await addRoomCollection.findOne({
-//     _id: new ObjectId(id),
-//   });
-
-//   res.send(room);
-// });
 
 
     app.patch("/rooms/:id", async (req, res) => {
