@@ -31,7 +31,7 @@ const client = new MongoClient(uri, {
 });
 
 const JWKS =createRemoteJWKSet(
-  new URL("http://localhost:3000/api/auth/jwks")
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
 )
 
 const verifyToken = async (req, res, next) => {
@@ -68,7 +68,7 @@ const verifyToken = async (req, res, next) => {
 async function server() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
 
     // Work is start from hare 
@@ -112,73 +112,105 @@ async function server() {
 
  //  single room show
     app.get("/rooms/:id", verifyToken, async (req, res) => {
-        const id = req.params.id;
-        const query = { _id: new ObjectId(id) };
-        const result = await addRoomCollection.findOne(query);
+        try {
+            const id = req.params.id;
+            if (!ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid Room ID" });
+            const query = { _id: new ObjectId(id) };
+            const result = await addRoomCollection.findOne(query);
 
-        if (!result) {
-            return res.status(404).json({ success: false, message: "Room not found" });
+            if (!result) {
+                return res.status(404).json({ success: false, message: "Room not found" });
+            }
+
+            res.json(result);
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
         }
-
-        res.json(result);
     })
 
     app.post("/add-room", async (req, res) => {
-        const addRoom = req.body;
-        console.log(addRoom);
-        const result = await addRoomCollection.insertOne(addRoom);
-        res.send(result);
+        try {
+            const addRoom = req.body;
+            console.log(addRoom);
+            const result = await addRoomCollection.insertOne(addRoom);
+            res.send(result);
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
     })
 
 
 
 
     app.patch("/rooms/:id", async (req, res) => {
-        const id = req.params.id;
-        const updateRoom = req.body;
-        console.log(updateRoom);
-        const result = await addRoomCollection.updateOne(
-          {
-            _id: new ObjectId(id),
-          },
-          {
-            $set: updateRoom,
-          }
-        );
-        res.json(result);
+        try {
+            const id = req.params.id;
+            if (!ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid Room ID" });
+            const updateRoom = req.body;
+            console.log(updateRoom);
+            const result = await addRoomCollection.updateOne(
+              {
+                _id: new ObjectId(id),
+              },
+              {
+                $set: updateRoom,
+              }
+            );
+            res.json(result);
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
     })
 
 
     app.delete('/rooms/:id', async (req, res) => {
-        const id = req.params.id;
-        const query = { _id: new ObjectId(id) };
-        const result = await addRoomCollection.deleteOne(query);
-        res.json(result);
+        try {
+            const id = req.params.id;
+            if (!ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid Room ID" });
+            const query = { _id: new ObjectId(id) };
+            const result = await addRoomCollection.deleteOne(query);
+            res.json(result);
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
     })
 
     app.get("/bookings/:userId", async (req, res) => {
-        const { userId } = req.params;
-        const result = await bookingCollection.find({ userId:userId }).toArray();
-        res.json(result);
-  })
+        try {
+            const { userId } = req.params;
+            const result = await bookingCollection.find({ userId:userId }).toArray();
+            res.json(result);
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    })
     
-    app.post("/bookings", async (req, res) => {
-        const booking = req.body;
-        console.log(booking);
-        const result = await bookingCollection.insertOne(booking);
-        res.json(result);
+    app.post("/bookings", verifyToken, async (req, res) => {
+        try {
+            const booking = req.body;
+            console.log(booking);
+            const result = await bookingCollection.insertOne(booking);
+            res.json(result);
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
     })
 
-    app.delete('/bookings/:bookingId', async (req, res) => {
-        const {bookingId} = req.params;
-        const query = { _id: new ObjectId(bookingId) };
-        const result = await bookingCollection.deleteOne(query);
-        res.json(result);
+    app.delete('/bookings/:bookingId', verifyToken, async (req, res) => {
+        try {
+            const {bookingId} = req.params;
+            if (!ObjectId.isValid(bookingId)) return res.status(400).json({ success: false, message: "Invalid Booking ID" });
+            const query = { _id: new ObjectId(bookingId) };
+            const result = await bookingCollection.deleteOne(query);
+            res.json(result);
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
     })
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
